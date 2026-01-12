@@ -5,9 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8a047d52-5711-42ba-b7e5-1045596a54e1" name="Changes" comment="more changes">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasu-backend/target/family-1.0.0.jar" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-backend/target/family-1.0.0.jar" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasu-backend/target/family-1.0.0.jar.original" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-backend/target/family-1.0.0.jar.original" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sasu-backend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-backend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasu-mobile/lib/core/constants/api_config.dart" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-mobile/lib/core/constants/api_config.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,6 +43,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Flutter.SaSuFamily.executor": "Run",
     "Flutter.main.dart.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
@@ -58,8 +61,8 @@
   }
 }]]></component>
   <component name="RunManager">
-    <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter">
-      <option name="filePath" value="$PROJECT_DIR$/lib/main.dart" />
+    <configuration name="SaSuFamily" type="FlutterRunConfigurationType" factoryName="Flutter">
+      <option name="filePath" value="$PROJECT_DIR$/sasu-mobile/lib/main.dart" />
       <method v="2" />
     </configuration>
   </component>
