@@ -36,10 +36,17 @@ public class DashboardSummaryDTO {
     private BigDecimal totalInsuranceCoverage;
     private BigDecimal totalMonthlyBurden;
 
+    // Income & Expenses
+    private BigDecimal monthlyIncome;
+    private BigDecimal monthlyExpenses;
+
     // Health indicators
     private Integer wealthHealthScore;      // 0-100
     private String wealthHealthLabel;       // Poor, Stable, Strong, Excellent
     private String futureReadinessStatus;   // Ready, Needs Attention, etc.
+
+    // Detailed Score Breakdown (6 Pillars)
+    private ScoreBreakdownDTO scoreBreakdown;
 
     // Breakdown
     private List<AssetSummaryDTO> assetsByType;
@@ -48,5 +55,7 @@ public class DashboardSummaryDTO {
 
     // Motivational message
     private String motivationalMessage;
-}
 
+    // Monthly burden details (new)
+    private List<MonthlyBurdenDetailDTO> monthlyBurdenDetails;
+}

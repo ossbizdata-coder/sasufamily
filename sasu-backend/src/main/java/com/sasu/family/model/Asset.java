@@ -65,6 +65,14 @@ public class Asset {
     @Column(nullable = false)
     private Boolean active = true;
 
+    /**
+     * Marks if this asset can be quickly converted to cash (within 3-6 months)
+     * Examples: Cash, Savings, Fixed Deposits (short-term), Liquid Mutual Funds
+     * Used for calculating Emergency Fund / Liquidity Score
+     */
+    @Column(nullable = false)
+    private Boolean isLiquid = false;
+
     public enum AssetType {
         LAND,
         HOUSE,
@@ -75,6 +83,8 @@ public class Asset {
         EPF,
         RETIREMENT_FUND,
         GOLD,
+        CASH,           // Added: Cash in hand
+        BANK_DEPOSIT,   // Added: Bank deposits/savings
         OTHER
     }
 }

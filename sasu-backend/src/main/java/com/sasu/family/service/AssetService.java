@@ -39,6 +39,7 @@ public class AssetService {
         asset.setPurchaseYear(assetDetails.getPurchaseYear());
         asset.setDescription(assetDetails.getDescription());
         asset.setYearlyGrowthRate(assetDetails.getYearlyGrowthRate());
+        asset.setIsLiquid(assetDetails.getIsLiquid());
         asset.setLastUpdated(LocalDate.now());
 
         return assetRepository.save(asset);
