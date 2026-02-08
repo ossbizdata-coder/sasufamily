@@ -292,10 +292,9 @@ public class DashboardService {
 
     private BigDecimal calculateTotalInvestments() {
         List<Asset> assets = assetRepository.findByActiveTrue();
+        // Sum all assets marked as investments
         return assets.stream()
-                .filter(a -> a.getType() == Asset.AssetType.SHARES ||
-                            a.getType() == Asset.AssetType.EPF ||
-                            a.getType() == Asset.AssetType.RETIREMENT_FUND)
+                .filter(a -> Boolean.TRUE.equals(a.getIsInvestment()))
                 .map(Asset::getCurrentValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

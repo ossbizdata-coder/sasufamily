@@ -3,6 +3,7 @@ D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\famil
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\controller\DashboardController.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\controller\LiabilityController.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\model\Insurance.java
+D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\migration\AddIsInvestmentToAssets.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\service\AssetService.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\controller\AssetController.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\config\DatabaseMigration.java
@@ -10,10 +11,12 @@ D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\famil
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\controller\AuthController.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\security\JwtAuthFilter.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\service\DashboardService.java
+D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\util\PasswordHashGenerator.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\service\FutureProjectionService.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\dto\LoginResponse.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\repository\InsuranceRepository.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\model\User.java
+D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\migration\AssetTypeEnumMigration.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\dto\FutureProjectionDTO.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\dto\AssetSummaryDTO.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\model\Asset.java

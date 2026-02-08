@@ -57,6 +57,20 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
+        // Validation
+        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Username is required");
+        }
+        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Password is required");
+        }
+        if (user.getFullName() == null || user.getFullName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Full name is required");
+        }
+        if (user.getRole() == null) {
+            return ResponseEntity.badRequest().body("Role is required");
+        }
+
         if (userRepository.existsByUsername(user.getUsername())) {
             return ResponseEntity.badRequest().body("Username already exists");
         }

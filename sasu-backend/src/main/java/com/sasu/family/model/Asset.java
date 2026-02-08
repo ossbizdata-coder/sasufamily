@@ -71,7 +71,17 @@ public class Asset {
      * Used for calculating Emergency Fund / Liquidity Score
      */
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isLiquid = false;
+
+    /**
+     * Marks if this asset is an investment (generates returns or appreciates)
+     * Examples: Shares, Mutual Funds, Fixed Deposits, Land (investment), Rental Property
+     * Used for calculating Investment Efficiency Score
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isInvestment = false;
 
     public enum AssetType {
         LAND,
@@ -83,8 +93,9 @@ public class Asset {
         EPF,
         RETIREMENT_FUND,
         GOLD,
-        CASH,           // Added: Cash in hand
-        BANK_DEPOSIT,   // Added: Bank deposits/savings
+        CASH,                    // Cash in hand
+        BANK_DEPOSIT,            // Bank deposits/savings
+        INSURANCE_INVESTMENT,    // Endowment/Savings insurance with investment returns
         OTHER
     }
 }

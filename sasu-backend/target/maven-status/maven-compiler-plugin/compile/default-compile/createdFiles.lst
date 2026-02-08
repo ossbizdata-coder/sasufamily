@@ -1,5 +1,6 @@
 com\sasu\family\dto\FutureProjectionDTO$FutureProjectionDTOBuilder.class
 com\sasu\family\dto\LiabilitySummaryDTO$LiabilitySummaryDTOBuilder.class
+com\sasu\family\migration\AssetTypeEnumMigration.class
 com\sasu\family\model\Insurance$InsuranceType.class
 com\sasu\family\SaSuApplication.class
 com\sasu\family\controller\LiabilityController.class
@@ -33,6 +34,7 @@ com\sasu\family\repository\AssetRepository.class
 com\sasu\family\repository\InsuranceRepository.class
 com\sasu\family\dto\MonthlyBurdenDetailDTO$MonthlyBurdenDetailDTOBuilder.class
 com\sasu\family\dto\ScoreBreakdownDTO$ScoreBreakdownDTOBuilder.class
+com\sasu\family\migration\AddIsInvestmentToAssets.class
 com\sasu\family\dto\LiabilitySummaryDTO.class
 com\sasu\family\service\FutureProjectionService.class
 com\sasu\family\security\CustomUserDetailsService.class
@@ -59,6 +61,7 @@ com\sasu\family\model\Income$IncomeType.class
 com\sasu\family\dto\AssetSummaryDTO$AssetSummaryDTOBuilder.class
 com\sasu\family\controller\AuthController.class
 com\sasu\family\model\Expense$ExpenseBuilder.class
+com\sasu\family\util\PasswordHashGenerator.class
 com\sasu\family\dto\FutureProjectionDTO.class
 com\sasu\family\model\Insurance$InsuranceBuilder.class
 com\sasu\family\config\SecurityConfig.class
