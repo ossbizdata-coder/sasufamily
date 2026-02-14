@@ -17,6 +17,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/liabilities")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class LiabilityController {
 

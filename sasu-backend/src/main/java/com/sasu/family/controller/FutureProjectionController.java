@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/future")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class FutureProjectionController {
 

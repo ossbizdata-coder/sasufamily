@@ -9,6 +9,7 @@ D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\famil
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\config\DatabaseMigration.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\repository\AssetRepository.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\controller\AuthController.java
+D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\dto\RegisterRequest.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\security\JwtAuthFilter.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\service\DashboardService.java
 D:\dev\repository\myproject\sasufamily\sasu-backend\src\main\java\com\sasu\family\util\PasswordHashGenerator.java

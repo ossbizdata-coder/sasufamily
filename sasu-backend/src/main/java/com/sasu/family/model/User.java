@@ -27,22 +27,23 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String username;
-
     @Column(nullable = false)
-    private String password;
+    @Builder.Default
+    private Boolean active = true;
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
+    @Column(nullable = false)
+    private String password;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
 
-    @Column(nullable = false)
-    private Boolean active = true;
+    @Column(unique = true, nullable = false)
+    private String username;
+
 
     public enum UserRole {
         ADMIN,    // Full access

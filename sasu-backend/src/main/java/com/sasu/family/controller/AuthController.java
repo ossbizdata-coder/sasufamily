@@ -2,6 +2,7 @@ package com.sasu.family.controller;
 
 import com.sasu.family.dto.LoginRequest;
 import com.sasu.family.dto.LoginResponse;
+import com.sasu.family.dto.RegisterRequest;
 import com.sasu.family.model.User;
 import com.sasu.family.repository.UserRepository;
 import com.sasu.family.security.JwtUtil;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -50,36 +52,57 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            System.err.println("Login failed for user: " + request.getUsername() + " - Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Invalid credentials");
+                    .body("Invalid username or password");
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        // Validation
-        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Username is required");
-        }
-        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Password is required");
-        }
-        if (user.getFullName() == null || user.getFullName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Full name is required");
-        }
-        if (user.getRole() == null) {
-            return ResponseEntity.badRequest().body("Role is required");
-        }
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        try {
+            // Validation
+            if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Username is required");
+            }
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Password is required");
+            }
+            if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Full name is required");
+            }
+            if (request.getRole() == null || request.getRole().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Role is required");
+            }
 
-        if (userRepository.existsByUsername(user.getUsername())) {
-            return ResponseEntity.badRequest().body("Username already exists");
+            if (userRepository.existsByUsername(request.getUsername())) {
+                return ResponseEntity.badRequest().body("Username already exists");
+            }
+
+            // Convert role string to enum
+            User.UserRole role;
+            try {
+                role = User.UserRole.valueOf(request.getRole().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Invalid role. Must be ADMIN or FAMILY");
+            }
+
+            User user = User.builder()
+                    .username(request.getUsername())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .fullName(request.getFullName())
+                    .role(role)
+                    .active(true)
+                    .build();
+
+            userRepository.save(user);
+
+            return ResponseEntity.ok("User registered successfully");
+        } catch (Exception e) {
+            System.err.println("Registration failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Registration failed: " + e.getMessage());
         }
-
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setActive(true);
-        User savedUser = userRepository.save(user);
-
-        return ResponseEntity.ok("User registered successfully");
     }
 }
 

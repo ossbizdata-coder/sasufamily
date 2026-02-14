@@ -45,6 +45,7 @@ com\sasu\family\model\Expense$ExpenseCategory.class
 com\sasu\family\model\Liability$LiabilityBuilder.class
 com\sasu\family\model\User.class
 com\sasu\family\controller\IncomeController.class
+com\sasu\family\dto\RegisterRequest.class
 com\sasu\family\security\JwtAuthFilter.class
 com\sasu\family\config\DatabaseMigration.class
 com\sasu\family\controller\DashboardController.class
