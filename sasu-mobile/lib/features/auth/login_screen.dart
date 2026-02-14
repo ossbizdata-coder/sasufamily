@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../data/services/api_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../dashboard/dashboard_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -183,41 +184,36 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Demo credentials hint
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.lightBlue,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Demo Credentials:',
-                        style: Theme.of(context).textTheme.titleMedium,
+                // Register link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Don't have an account? ",
+                      style: TextStyle(color: AppTheme.textMedium),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Register here',
+                        style: TextStyle(
+                          color: AppTheme.primaryBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      _buildCredentialRow('Admin', 'admin / admin123'),
-                      _buildCredentialRow('Wife', 'wife / wife123'),
-                      _buildCredentialRow('Daughter', 'daughter / daughter123'),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildCredentialRow(String role, String credentials) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        '$role: $credentials',
-        style: const TextStyle(fontSize: 12, color: AppTheme.textMedium),
       ),
     );
   }

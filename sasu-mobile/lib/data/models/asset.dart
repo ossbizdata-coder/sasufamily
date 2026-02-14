@@ -14,6 +14,8 @@ class Asset {
   final double? yearlyGrowthRate;
   final String? lastUpdated;
   final bool active;
+  final bool isLiquid; // Can be converted to cash quickly (3-6 months)
+  final bool isInvestment; // Generates returns or appreciates (used for Investment Efficiency)
 
   Asset({
     this.id,
@@ -26,6 +28,8 @@ class Asset {
     this.yearlyGrowthRate,
     this.lastUpdated,
     this.active = true,
+    this.isLiquid = false,
+    this.isInvestment = false,
   });
 
   factory Asset.fromJson(Map<String, dynamic> json) {
@@ -40,6 +44,8 @@ class Asset {
       yearlyGrowthRate: json['yearlyGrowthRate']?.toDouble(),
       lastUpdated: json['lastUpdated'],
       active: json['active'] ?? true,
+      isLiquid: json['isLiquid'] ?? false,
+      isInvestment: json['isInvestment'] ?? false,
     );
   }
 
@@ -55,6 +61,8 @@ class Asset {
       'yearlyGrowthRate': yearlyGrowthRate,
       'lastUpdated': lastUpdated,
       'active': active,
+      'isLiquid': isLiquid,
+      'isInvestment': isInvestment,
     };
   }
 }

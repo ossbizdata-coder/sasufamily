@@ -28,11 +28,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/dashboard_summary.dart';
 import '../../data/models/user.dart';
 import '../../data/services/api_service.dart';
-import '../../core/widgets/info_card.dart';
 import '../../core/theme/app_theme.dart';
-import '../assets/assets_screen.dart';
-import '../insurance/insurance_screen.dart';
-import '../liabilities/liabilities_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final User user;
@@ -79,15 +75,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return formatter.format(amount);
   }
 
-  String _formatCompact(double amount) {
-    if (amount >= 10000000) {
-      return 'Rs. ${(amount / 10000000).toStringAsFixed(1)}Cr';
-    } else if (amount >= 100000) {
-      return 'Rs. ${(amount / 100000).toStringAsFixed(1)}L';
-    } else {
-      return 'Rs. ${(amount / 1000).toStringAsFixed(0)}K';
-    }
-  }
 
   Color _getScoreColor(int score) {
     if (score >= 80) return AppTheme.success;
@@ -99,24 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('SaSu'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadDashboard,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await ApiService.clearToken();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/login');
-              }
-            },
-          ),
-        ],
-      ),
+      // Remove AppBar, start directly with body
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -135,37 +105,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                 )
-              : RefreshIndicator(
-                  onRefresh: _loadDashboard,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Welcome message
-                        _buildWelcomeSection(),
-                        const SizedBox(height: 24),
-
-                        // Net Worth Card
-                        _buildNetWorthCard(),
-                        const SizedBox(height: 16),
-
-                        // Wealth Health Score
-                        _buildWealthScoreCard(),
-                        const SizedBox(height: 24),
-
-                        // Quick Stats Row
-                        _buildQuickStatsRow(),
-                        const SizedBox(height: 24),
-
-                        // Motivational Message
-                        _buildMotivationalCard(),
-                        const SizedBox(height: 24),
-
-                        // Navigate to Details
-                        _buildNavigationSection(),
-                      ],
+              : SafeArea(
+                  bottom: true,
+                  child: RefreshIndicator(
+                    onRefresh: _loadDashboard,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 100), // Bottom padding for navbar
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Welcome message (without button)
+                          _buildWelcomeSection(),
+                          const SizedBox(height: 12),
+                          // Wealth Health Score (moved up)
+                          _buildWealthScoreCard(),
+                          const SizedBox(height: 16),
+                          // Detailed Score Breakdown (always visible)
+                          if (_summary!.scoreBreakdown != null)
+                            _buildScoreBreakdown(),
+                          const SizedBox(height: 16),
+                          // Financial Projection Button at bottom
+                          _buildFinancialProjectionButton(),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -173,42 +137,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildWelcomeSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Welcome, ${widget.user.fullName}',
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Your Family Financial Health',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppTheme.textMedium,
-              ),
-        ),
-      ],
+    return Text(
+      'Welcome, ${widget.user.fullName}',
+      style: Theme.of(context).textTheme.displaySmall,
+      textAlign: TextAlign.center,
     );
   }
 
-  Widget _buildNetWorthCard() {
-    return InfoCard(
-      title: 'Total Net Worth',
-      value: _formatCompact(_summary!.netWorth),
-      subtitle: 'Assets: ${_formatCompact(_summary!.totalAssets)} | '
-          'Liabilities: ${_formatCompact(_summary!.totalLiabilities)}',
-      icon: Icons.account_balance_wallet,
-      gradient: AppTheme.greenGradient,
+  Widget _buildFinancialProjectionButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          Navigator.pushNamed(
+            context,
+            '/financialProjection',
+            arguments: {'user': widget.user},
+          );
+        },
+        icon: const Icon(Icons.insights, size: 20),
+        label: const Text('View Financial Projections'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryGreen,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          elevation: 2,
+        ),
+      ),
     );
   }
+
 
   Widget _buildWealthScoreCard() {
     final score = _summary!.wealthHealthScore;
     final color = _getScoreColor(score);
 
     return Card(
+      margin: EdgeInsets.zero, // remove default margin
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12), // reduced padding
         child: Column(
           children: [
             Row(
@@ -221,65 +191,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       'Wealth Health Score',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _summary!.wealthHealthLabel,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: color,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    const SizedBox(height: 4), // reduced spacing
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          _summary!.wealthHealthLabel,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (_summary!.wealthHealthLabel == 'Excellent')
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4.0),
+                            child: Icon(
+                              Icons.emoji_events,
+                              color: Colors.amber.shade700,
+                              size: 18,
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
-                // Circular progress indicator
-                SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CircularProgressIndicator(
-                        value: score / 100,
-                        strokeWidth: 10,
-                        backgroundColor: Colors.grey[200],
-                        valueColor: AlwaysStoppedAnimation<Color>(color),
-                      ),
-                      Center(
-                        child: Text(
-                          '$score',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: color,
-                          ),
+                // Show animated speedometer
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha((0.08 * 255).toInt()),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$score%',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 8,
+                          color: color.withAlpha((0.25 * 255).toInt()),
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8), // reduced spacing
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8), // reduced padding
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: color.withAlpha((0.1 * 255).toInt()),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.shield_outlined, color: color, size: 20),
-                  const SizedBox(width: 8),
+                  Icon(Icons.shield_outlined, color: color, size: 18),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       'Future Readiness: ${_summary!.futureReadinessStatus}',
                       style: TextStyle(
                         color: color,
                         fontWeight: FontWeight.w500,
+                        fontSize: 13,
                       ),
                     ),
                   ),
+                  _buildStars(score),
                 ],
               ),
             ),
@@ -289,127 +273,328 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildQuickStatsRow() {
+  Widget _buildStars(int score) {
+    int stars = (score / 20).ceil().clamp(1, 5);
     return Row(
-      children: [
-        Expanded(
-          child: InfoCard(
-            title: 'Insurance Coverage',
-            value: _formatCompact(_summary!.totalInsuranceCoverage),
-            subtitle: '${_summary!.totalInsurancePolicies} policies',
-            icon: Icons.security,
-            iconColor: AppTheme.primaryBlue,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: InfoCard(
-            title: 'Monthly Burden',
-            value: _formatCompact(_summary!.totalMonthlyBurden),
-            subtitle: 'All loans',
-            icon: Icons.payments_outlined,
-            iconColor: AppTheme.warning,
-          ),
-        ),
-      ],
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (i) => Icon(
+        i < stars ? Icons.star : Icons.star_border,
+        color: Colors.amber,
+        size: 18,
+      )),
     );
   }
 
-  Widget _buildMotivationalCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: AppTheme.blueGradient,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.favorite, color: Colors.white, size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              _summary!.motivationalMessage,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildScoreBreakdown() {
+    final breakdown = _summary!.scoreBreakdown!;
 
-  Widget _buildNavigationSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'View Details',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 16),
-        _buildNavigationCard(
-          'Assets',
-          'View all family assets',
-          Icons.home_work,
-          AppTheme.primaryGreen,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AssetsScreen(user: widget.user)),
-          ),
-        ),
         const SizedBox(height: 12),
-        _buildNavigationCard(
-          'Insurance',
-          'Protection & future benefits',
-          Icons.security,
-          AppTheme.primaryBlue,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => InsuranceScreen(user: widget.user)),
-          ),
+        _buildPillarCard(
+          'Net Worth Growth',
+          breakdown.netWorthScore,
+          25,
+          breakdown.netWorthStatus,
+          Icons.trending_up,
+          const Color(0xFF2E7D32), // Natural green
+          'Net Worth: ${_formatCurrency(breakdown.netWorthValue)}',
+          '/assets',
         ),
-        const SizedBox(height: 12),
-        _buildNavigationCard(
-          'Liabilities',
-          'Loans and credits',
-          Icons.credit_card,
-          AppTheme.warning,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => LiabilitiesScreen(user: widget.user)),
-          ),
+        const SizedBox(height: 8),
+        _buildPillarCard(
+          'Cash Flow Health',
+          breakdown.cashFlowScore,
+          20,
+          breakdown.cashFlowStatus,
+          Icons.payments,
+          const Color(0xFF1565C0), // Deep blue
+          'Savings Rate: ${breakdown.savingsRate.toStringAsFixed(1)}% | '
+              'Surplus: ${_formatCurrency(breakdown.monthlySurplus)}',
+          '/incomeExpense',
         ),
+        const SizedBox(height: 8),
+        _buildPillarCard(
+          'Liquidity & Emergency Fund',
+          breakdown.liquidityScore,
+          15,
+          breakdown.liquidityStatus,
+          Icons.water_drop,
+          const Color(0xFF00838F), // Teal/Cyan
+          'Emergency Fund: ${breakdown.emergencyFundMonths.toStringAsFixed(1)} months | '
+              'Liquid: ${_formatCurrency(breakdown.liquidAssets)}',
+          '/liquidity',
+        ),
+        const SizedBox(height: 8),
+        _buildPillarCard(
+          'Protection & Insurance',
+          breakdown.protectionScore,
+          10,
+          breakdown.protectionStatus,
+          Icons.shield,
+          const Color(0xFF283593), // Indigo
+          'Coverage: ${breakdown.coverageRatio.toStringAsFixed(1)}x annual expenses | '
+              'Health: ${breakdown.hasHealthInsurance ? "✓" : "✗"} | '
+              'Life: ${breakdown.hasLifeInsurance ? "✓" : "✗"}',
+          '/insurance',
+        ),
+        const SizedBox(height: 8),
+        _buildPillarCard(
+          'Investment Efficiency',
+          breakdown.investmentScore,
+          15,
+          breakdown.investmentStatus,
+          Icons.show_chart,
+          const Color(0xFF6A1B9A), // Purple
+          'Investment Ratio: ${breakdown.investmentRatio.toStringAsFixed(1)}% | '
+              'Total: ${_formatCurrency(breakdown.totalInvestments)}',
+          '/investment-efficiency',
+        ),
+        const SizedBox(height: 8),
+        _buildPillarCard(
+          'Debt Health',
+          breakdown.debtScore,
+          15,
+          breakdown.debtStatus,
+          Icons.account_balance,
+          breakdown.debtStatus == 'Critical' ? const Color(0xFFC62828) : const Color(0xFFEF6C00), // Red or orange
+          'DTI: ${breakdown.debtToIncomeRatio.toStringAsFixed(1)}% | '
+              'Debt Ratio: ${(breakdown.debtRatio * 100).toStringAsFixed(1)}%',
+          '/liabilities',
+        ),
+
       ],
     );
   }
 
-  Widget _buildNavigationCard(
+  Widget _buildPillarCard(
     String title,
-    String subtitle,
+    int score,
+    int maxScore,
+    String status,
     IconData icon,
     Color color,
-    VoidCallback onTap,
+    String details,
+    String? route,
   ) {
-    return Card(
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+    final percentage = (score / maxScore * 100).clamp(0.0, 100.0);
+    final statusColor = _getStatusColor(status);
+
+    // Extract total amount from details string
+    String totalAmount = '';
+    if (details.contains('Net Worth:')) {
+      totalAmount = details.split('Net Worth:')[1].trim();
+    } else if (details.contains('Surplus:')) {
+      totalAmount = details.split('Surplus:')[1].trim();
+    } else if (details.contains('Debt Ratio:')) {
+      // For debt, show DTI ratio
+      totalAmount = details.split('DTI:')[1].split('|')[0].trim();
+    } else if (details.contains('Liquid:')) {
+      totalAmount = details.split('Liquid:')[1].trim();
+    } else if (details.contains('Total:')) {
+      totalAmount = details.split('Total:')[1].trim();
+    } else if (details.contains('Coverage:')) {
+      totalAmount = details.split('Coverage:')[1].split('|')[0].trim();
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: route != null
+          ? () {
+              Navigator.pushNamed(
+                context,
+                route,
+                arguments: {'user': widget.user},
+              );
+            }
+          : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withValues(alpha: 0.3),
+            width: 2,
           ),
-          child: Icon(icon, color: color),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          color.withValues(alpha: 0.15),
+                          color.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: color.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: statusColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            status,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: statusColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (totalAmount.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            color.withValues(alpha: 0.15),
+                            color.withValues(alpha: 0.08),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: color.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        totalAmount,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: percentage / 100,
+                        backgroundColor: color.withValues(alpha: 0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                        minHeight: 8,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '$score / $maxScore',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.grey.shade200,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        details,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade700,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
-}
 
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Excellent':
+        return Colors.green.shade700;
+      case 'Good':
+        return Colors.blue.shade700;
+      case 'Fair':
+        return Colors.orange.shade700;
+      case 'Critical':
+      case 'Poor':
+        return Colors.red.shade700;
+      default:
+        return Colors.grey.shade700;
+    }
+  }
+}

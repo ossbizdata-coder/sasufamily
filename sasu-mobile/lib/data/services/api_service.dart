@@ -10,6 +10,8 @@ import '../models/dashboard_summary.dart';
 import '../models/asset.dart';
 import '../models/insurance.dart';
 import '../models/liability.dart';
+import '../models/income.dart';
+import '../models/expense.dart';
 import '../../core/constants/api_config.dart';
 
 class ApiService {
@@ -48,24 +50,68 @@ class ApiService {
 
   // Login
   static Future<User> login(String username, String password) async {
-    final response = await http.post(
-      Uri.parse(ApiConfig.login),
-      headers: _getHeaders(includeAuth: false),
-      body: jsonEncode({
-        'username': username,
-        'password': password,
-      }),
-    ).timeout(ApiConfig.timeout);
+    final url = ApiConfig.login;
+    final headers = _getHeaders(includeAuth: false);
+    final body = jsonEncode({
+      'username': username,
+      'password': password,
+    });
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final user = User.fromJson(data);
-      if (user.token != null) {
-        await saveToken(user.token!);
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: body,
+      ).timeout(ApiConfig.timeout);
+
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final user = User.fromJson(data);
+        if (user.token != null) {
+          await saveToken(user.token!);
+        }
+        return user;
+      } else {
+        throw Exception('Login failed: ${response.body}');
       }
-      return user;
-    } else {
-      throw Exception('Login failed: ${response.body}');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Register
+  static Future<void> register({
+    required String username,
+    required String password,
+    required String fullName,
+    required String role,
+  }) async {
+    final url = ApiConfig.register;
+    final headers = _getHeaders(includeAuth: false);
+    final body = jsonEncode({
+      'username': username,
+      'password': password,
+      'fullName': fullName,
+      'role': role,
+      'active': true,
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: body,
+      ).timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final errorMsg = response.body;
+        throw Exception(errorMsg);
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -253,5 +299,118 @@ class ApiService {
       throw Exception('Failed to delete liability: ${response.body}');
     }
   }
-}
 
+  // Get all incomes
+  static Future<List<Income>> getIncomes() async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/incomes'),
+      headers: _getHeaders(),
+    ).timeout(ApiConfig.timeout);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Income.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load incomes: ${response.body}');
+    }
+  }
+
+  // Create income
+  static Future<Income> createIncome(Income income) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/incomes'),
+      headers: _getHeaders(),
+      body: jsonEncode(income.toJson()),
+    ).timeout(ApiConfig.timeout);
+
+    if (response.statusCode == 200) {
+      return Income.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to create income: ${response.body}');
+    }
+  }
+
+  // Update income
+  static Future<Income> updateIncome(int id, Income income) async {
+    final response = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/incomes/$id'),
+      headers: _getHeaders(),
+      body: jsonEncode(income.toJson()),
+    ).timeout(ApiConfig.timeout);
+
+    if (response.statusCode == 200) {
+      return Income.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to update income: ${response.body}');
+    }
+  }
+
+  // Delete income
+  static Future<void> deleteIncome(int id) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/incomes/$id'),
+      headers: _getHeaders(),
+    ).timeout(ApiConfig.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete income: ${response.body}');
+    }
+  }
+
+  // Get all expenses
+  static Future<List<Expense>> getExpenses() async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/expenses'),
+      headers: _getHeaders(),
+    ).timeout(ApiConfig.timeout);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Expense.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load expenses: ${response.body}');
+    }
+  }
+
+  // Create expense
+  static Future<Expense> createExpense(Expense expense) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/expenses'),
+      headers: _getHeaders(),
+      body: jsonEncode(expense.toJson()),
+    ).timeout(ApiConfig.timeout);
+
+    if (response.statusCode == 200) {
+      return Expense.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to create expense: ${response.body}');
+    }
+  }
+
+  // Update expense
+  static Future<Expense> updateExpense(int id, Expense expense) async {
+    final response = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/expenses/$id'),
+      headers: _getHeaders(),
+      body: jsonEncode(expense.toJson()),
+    ).timeout(ApiConfig.timeout);
+
+    if (response.statusCode == 200) {
+      return Expense.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to update expense: ${response.body}');
+    }
+  }
+
+  // Delete expense
+  static Future<void> deleteExpense(int id) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/expenses/$id'),
+      headers: _getHeaders(),
+    ).timeout(ApiConfig.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete expense: ${response.body}');
+    }
+  }
+}

@@ -3,11 +3,9 @@
 /// Backend endpoint configuration
 
 class ApiConfig {
-  // Change this to your backend URL
-  // For Android Emulator use: 10.0.2.2
-  // For iOS Simulator use: localhost
-  // For physical device use: your computer's IP address
-  static const String baseUrl = 'http://localhost:8080/api';
+  // Production backend URL via nginx proxy
+  // nginx routes /sasu/ to port 8082/api/
+  static const String baseUrl = 'http://74.208.132.78/sasu';
 
   // Auth endpoints
   static const String login = '$baseUrl/auth/login';
