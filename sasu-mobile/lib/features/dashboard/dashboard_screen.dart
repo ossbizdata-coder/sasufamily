@@ -26,6 +26,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/dashboard_summary.dart';
+import '../../data/models/asset.dart';
+import '../../data/models/liability.dart';
 import '../../data/models/user.dart';
 import '../../data/services/api_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -41,8 +43,41 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   DashboardSummary? _summary;
+  List<Asset> _assets = [];
+  List<Liability> _liabilities = [];
   bool _isLoading = true;
   String? _error;
+
+  // Calculated totals (with auto-growth and currency conversion)
+  double get _calculatedTotalAssets {
+    return _assets.fold(0, (sum, asset) => sum + asset.valueInLKR);
+  }
+
+  double get _calculatedTotalLiabilities {
+    return _liabilities.fold(0, (sum, liability) => sum + liability.calculatedRemainingAmount);
+  }
+
+  double get _calculatedNetWorth {
+    return _calculatedTotalAssets - _calculatedTotalLiabilities;
+  }
+
+  double get _calculatedLiquidAssets {
+    return _assets
+        .where((a) => a.isLiquid)
+        .fold(0, (sum, asset) => sum + asset.valueInLKR);
+  }
+
+  double get _calculatedInvestments {
+    return _assets
+        .where((a) => a.isInvestment)
+        .fold(0, (sum, asset) => sum + asset.valueInLKR);
+  }
+
+  // Investment ratio = investments / total assets * 100
+  double get _calculatedInvestmentRatio {
+    if (_calculatedTotalAssets == 0) return 0;
+    return (_calculatedInvestments / _calculatedTotalAssets) * 100;
+  }
 
   @override
   void initState() {
@@ -57,9 +92,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     try {
-      final summary = await ApiService.getDashboardSummary();
+      // Load dashboard summary, assets, and liabilities in parallel
+      final results = await Future.wait([
+        ApiService.getDashboardSummary(),
+        ApiService.getAssets(),
+        ApiService.getLiabilities(),
+      ]);
+
       setState(() {
-        _summary = summary;
+        _summary = results[0] as DashboardSummary;
+        _assets = results[1] as List<Asset>;
+        _liabilities = results[2] as List<Liability>;
         _isLoading = false;
       });
     } catch (e) {
@@ -118,8 +161,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           // Welcome message (without button)
                           _buildWelcomeSection(),
                           const SizedBox(height: 12),
-                          // Wealth Health Score (moved up)
+                          // Wealth Health Score
                           _buildWealthScoreCard(),
+                          const SizedBox(height: 12),
+                          // Financial Summary (Assets, Debts, Net Worth)
+                          _buildFinancialSummaryCard(),
                           const SizedBox(height: 16),
                           // Detailed Score Breakdown (always visible)
                           if (_summary!.scoreBreakdown != null)
@@ -137,12 +183,134 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildWelcomeSection() {
-    return Text(
-      'Welcome, ${widget.user.fullName}',
-      style: Theme.of(context).textTheme.displaySmall,
-      textAlign: TextAlign.center,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            'Welcome, ${widget.user.fullName}',
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
+        ),
+        // Refresh button
+        IconButton(
+          icon: Icon(Icons.refresh, color: Colors.grey.shade600),
+          onPressed: _loadDashboard,
+          tooltip: 'Refresh',
+        ),
+        if (widget.user.isAdmin)
+          IconButton(
+            icon: Icon(Icons.settings, color: Colors.grey.shade600),
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/admin-settings',
+                arguments: {'user': widget.user},
+              );
+            },
+            tooltip: 'Admin Settings',
+          ),
+      ],
     );
   }
+
+  Widget _buildFinancialSummaryCard() {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            // Net Worth (centered with icon)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.account_balance_wallet,
+                  color: _calculatedNetWorth >= 0 ? AppTheme.primaryGreen : Colors.red,
+                  size: 28,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _formatCurrency(_calculatedNetWorth),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: _calculatedNetWorth >= 0 ? AppTheme.primaryGreen : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Assets and Liabilities row - centered alignment
+            Row(
+              children: [
+                // Assets
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.arrow_upward, color: AppTheme.primaryGreen, size: 14),
+                          const SizedBox(width: 4),
+                          Text('Assets', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatCurrency(_calculatedTotalAssets),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Divider
+                Container(
+                  width: 1,
+                  height: 36,
+                  color: Colors.grey.shade300,
+                ),
+                // Liabilities
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.arrow_downward, color: Colors.orange.shade700, size: 14),
+                          const SizedBox(width: 4),
+                          Text('Liabilities', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatCurrency(_calculatedTotalLiabilities),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: _calculatedTotalLiabilities > 0 ? Colors.orange.shade700 : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildFinancialProjectionButton() {
     return SizedBox(
@@ -293,13 +461,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         const SizedBox(height: 12),
         _buildPillarCard(
-          'Net Worth Growth',
+          'Net Worth',
           breakdown.netWorthScore,
           25,
           breakdown.netWorthStatus,
           Icons.trending_up,
           const Color(0xFF2E7D32), // Natural green
-          'Net Worth: ${_formatCurrency(breakdown.netWorthValue)}',
+          'Net Worth: ${_formatCurrency(_calculatedNetWorth)}',
           '/assets',
         ),
         const SizedBox(height: 8),
@@ -323,7 +491,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Icons.water_drop,
           const Color(0xFF00838F), // Teal/Cyan
           'Emergency Fund: ${breakdown.emergencyFundMonths.toStringAsFixed(1)} months | '
-              'Liquid: ${_formatCurrency(breakdown.liquidAssets)}',
+              'Liquid: ${_formatCurrency(_calculatedLiquidAssets)}',
           '/liquidity',
         ),
         const SizedBox(height: 8),
@@ -332,12 +500,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           breakdown.protectionScore,
           10,
           breakdown.protectionStatus,
-          Icons.shield,
+          Icons.health_and_safety,
           const Color(0xFF283593), // Indigo
-          'Coverage: ${breakdown.coverageRatio.toStringAsFixed(1)}x annual expenses | '
+          'Coverage: ${breakdown.coverageRatio.toStringAsFixed(1)}x | '
               'Health: ${breakdown.hasHealthInsurance ? "✓" : "✗"} | '
               'Life: ${breakdown.hasLifeInsurance ? "✓" : "✗"}',
           '/insurance',
+          hasHealthInsurance: breakdown.hasHealthInsurance,
+          hasLifeInsurance: breakdown.hasLifeInsurance,
         ),
         const SizedBox(height: 8),
         _buildPillarCard(
@@ -347,20 +517,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
           breakdown.investmentStatus,
           Icons.show_chart,
           const Color(0xFF6A1B9A), // Purple
-          'Investment Ratio: ${breakdown.investmentRatio.toStringAsFixed(1)}% | '
-              'Total: ${_formatCurrency(breakdown.totalInvestments)}',
+          'Investment Ratio: ${_calculatedInvestmentRatio.toStringAsFixed(1)}% | '
+              'Total: ${_formatCurrency(_calculatedInvestments)}',
           '/investment-efficiency',
         ),
         const SizedBox(height: 8),
         _buildPillarCard(
-          'Debt Health',
+          'Debts',
           breakdown.debtScore,
           15,
           breakdown.debtStatus,
           Icons.account_balance,
           breakdown.debtStatus == 'Critical' ? const Color(0xFFC62828) : const Color(0xFFEF6C00), // Red or orange
-          'DTI: ${breakdown.debtToIncomeRatio.toStringAsFixed(1)}% | '
-              'Debt Ratio: ${(breakdown.debtRatio * 100).toStringAsFixed(1)}%',
+          'Total: ${_formatCurrency(_calculatedTotalLiabilities)} | '
+              'DTI: ${breakdown.debtToIncomeRatio.toStringAsFixed(1)}%',
           '/liabilities',
         ),
 
@@ -376,10 +546,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     IconData icon,
     Color color,
     String details,
-    String? route,
-  ) {
+    String? route, {
+    bool? hasHealthInsurance,
+    bool? hasLifeInsurance,
+  }) {
     final percentage = (score / maxScore * 100).clamp(0.0, 100.0);
     final statusColor = _getStatusColor(status);
+
+    // Check if this is the insurance card
+    final isInsuranceCard = hasHealthInsurance != null || hasLifeInsurance != null;
 
     // Extract total amount from details string
     String totalAmount = '';
@@ -563,14 +738,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        details,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade700,
-                          height: 1.3,
-                        ),
-                      ),
+                      child: isInsuranceCard
+                          ? _buildInsuranceDetails(details, hasHealthInsurance!, hasLifeInsurance!)
+                          : Text(
+                              details,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade700,
+                                height: 1.3,
+                              ),
+                            ),
                     ),
                   ],
                 ),
@@ -596,5 +773,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
       default:
         return Colors.grey.shade700;
     }
+  }
+
+  Widget _buildInsuranceDetails(String details, bool hasHealth, bool hasLife) {
+    // Extract coverage part
+    final coveragePart = details.split('|')[0].trim();
+
+    return Row(
+      children: [
+        Text(
+          coveragePart,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'Health: ',
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        Icon(
+          hasHealth ? Icons.check_circle : Icons.cancel,
+          size: 14,
+          color: hasHealth ? Colors.green : Colors.red,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'Life: ',
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        Icon(
+          hasLife ? Icons.check_circle : Icons.cancel,
+          size: 14,
+          color: hasLife ? Colors.green : Colors.red,
+        ),
+      ],
+    );
   }
 }

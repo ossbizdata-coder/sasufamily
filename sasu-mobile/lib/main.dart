@@ -7,7 +7,10 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/login_screen.dart';
+import 'features/auth/app_lock_screen.dart';
+import 'features/auth/pin_screen.dart';
 import 'data/services/api_service.dart';
+import 'data/services/exchange_rate_service.dart';
 import 'features/assets/asset_form_screen.dart';
 import 'features/assets/assets_screen.dart';
 import 'features/liabilities/liability_form_screen.dart';
@@ -18,12 +21,15 @@ import 'features/income_expense/income_expense_screen.dart';
 import 'features/dashboard/financial_projection_screen.dart';
 import 'features/liquidity/liquidity_screen.dart';
 import 'features/investments/investment_efficiency_screen.dart';
+import 'features/settings/exchange_rate_screen.dart';
+import 'features/settings/admin_settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize API service
+  // Initialize services
   await ApiService.init();
+  await ExchangeRateService.init();
 
   runApp(const SaSuApp());
 }
@@ -37,8 +43,17 @@ class SaSuApp extends StatelessWidget {
       title: 'SaSu - Family Wealth Dashboard',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const LoginScreen(),
+      home: const AppLockScreen(),
       routes: {
+        '/login': (context) => const LoginScreen(),
+        '/pin-setup': (context) => PinScreen(
+          mode: PinMode.setup,
+          onSuccess: () => Navigator.of(context).pop(true),
+        ),
+        '/pin-change': (context) => PinScreen(
+          mode: PinMode.change,
+          onSuccess: () => Navigator.of(context).pop(true),
+        ),
         '/assets': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
           if (args is Map && args['user'] != null) {
@@ -114,6 +129,14 @@ class SaSuApp extends StatelessWidget {
           final args = ModalRoute.of(context)?.settings.arguments;
           if (args is Map && args['user'] != null) {
             return InvestmentEfficiencyScreen(user: args['user']);
+          }
+          return const LoginScreen();
+        },
+        '/exchange-rate': (context) => const ExchangeRateScreen(),
+        '/admin-settings': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          if (args is Map && args['user'] != null) {
+            return AdminSettingsScreen(user: args['user']);
           }
           return const LoginScreen();
         },

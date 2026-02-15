@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/liability.dart';
 import '../../data/services/api_service.dart';
+import '../../core/utils/value_calculator.dart';
 
 class LiabilityFormScreen extends StatefulWidget {
   final Liability? liability;
@@ -24,6 +25,7 @@ class _LiabilityFormScreenState extends State<LiabilityFormScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isLoading = false;
+  bool _autoCalculate = false;
 
   final List<Map<String, String>> _liabilityTypes = [
     {'value': 'HOME_LOAN', 'label': 'Home Loan'},
@@ -53,6 +55,7 @@ class _LiabilityFormScreenState extends State<LiabilityFormScreen> {
     _descriptionController = TextEditingController(
       text: widget.liability?.description ?? '',
     );
+    _autoCalculate = widget.liability?.autoCalculate ?? false;
 
     if (widget.liability != null) {
       _selectedType = widget.liability!.type;
@@ -94,6 +97,156 @@ class _LiabilityFormScreenState extends State<LiabilityFormScreen> {
     }
   }
 
+  String _formatCurrency(double amount) {
+    final formatter = NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0);
+    return formatter.format(amount);
+  }
+
+  /// Parse a number string that may contain commas
+  double? _parseNumber(String text) {
+    if (text.isEmpty) return null;
+    // Remove commas and spaces
+    final cleanText = text.replaceAll(',', '').replaceAll(' ', '').trim();
+    return double.tryParse(cleanText);
+  }
+
+  // Build auto-calculate preview
+  Widget _buildAutoCalculatePreview() {
+    if (!_autoCalculate || _startDate == null) {
+      return const SizedBox.shrink();
+    }
+
+    final originalAmount = _parseNumber(_originalAmountController.text) ?? 0;
+    final monthlyPayment = _parseNumber(_monthlyPaymentController.text) ?? 0;
+    final interestRate = _parseNumber(_interestRateController.text) ?? 0;
+
+    if (originalAmount <= 0 || monthlyPayment <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    final status = ValueCalculator.calculateLiabilityStatus(
+      originalAmount: originalAmount,
+      interestRate: interestRate,
+      monthlyPayment: monthlyPayment,
+      startDate: _startDate!,
+    );
+
+    final progress = status.progressPercent(originalAmount);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withAlpha(20),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withAlpha(50)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.calculate, color: Colors.orange[700], size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Auto-Calculate Preview',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.orange[700],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                status.isFullyPaid ? Colors.green : Colors.orange,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${(progress * 100).toStringAsFixed(1)}% paid off',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Original Amount:'),
+              Text(_formatCurrency(originalAmount)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Remaining (Today):'),
+              Text(
+                _formatCurrency(status.remainingAmount),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: status.isFullyPaid ? Colors.green[700] : Colors.orange[700],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Total Paid:'),
+              Text(
+                _formatCurrency(status.totalPaid),
+                style: const TextStyle(color: Colors.green),
+              ),
+            ],
+          ),
+          if (status.totalInterestPaid > 0) ...[
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Interest Paid:'),
+                Text(
+                  _formatCurrency(status.totalInterestPaid),
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Time Remaining:'),
+              Text(
+                status.remainingTimeFormatted,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: status.isFullyPaid ? Colors.green : Colors.orange[700],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 16),
+          Text(
+            '📊 Balance updates automatically based on monthly payments since ${DateFormat('MMM yyyy').format(_startDate!)}',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -104,20 +257,17 @@ class _LiabilityFormScreenState extends State<LiabilityFormScreen> {
         id: widget.liability?.id,
         name: _nameController.text.trim(),
         type: _selectedType,
-        originalAmount: double.parse(_originalAmountController.text.trim()),
-        remainingAmount: double.parse(_remainingAmountController.text.trim()),
-        monthlyPayment: _monthlyPaymentController.text.isNotEmpty
-          ? double.parse(_monthlyPaymentController.text.trim())
-          : null,
-        interestRate: _interestRateController.text.isNotEmpty
-          ? double.parse(_interestRateController.text.trim())
-          : null,
+        originalAmount: _parseNumber(_originalAmountController.text) ?? 0,
+        remainingAmount: _parseNumber(_remainingAmountController.text) ?? 0,
+        monthlyPayment: _parseNumber(_monthlyPaymentController.text),
+        interestRate: _parseNumber(_interestRateController.text),
         startDate: _startDate?.toIso8601String(),
         endDate: _endDate?.toIso8601String(),
         description: _descriptionController.text.trim().isNotEmpty
           ? _descriptionController.text.trim()
           : null,
         active: true,
+        autoCalculate: _autoCalculate,
       );
 
       if (widget.liability == null) {
@@ -199,27 +349,58 @@ class _LiabilityFormScreenState extends State<LiabilityFormScreen> {
                     ),
                     keyboardType: TextInputType.number,
                     validator: (v) => v == null || v.isEmpty ? 'Enter original amount' : null,
+                    onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _remainingAmountController,
-                    decoration: const InputDecoration(
-                      labelText: 'Remaining Amount',
-                      border: OutlineInputBorder(),
-                      prefixText: 'Rs. ',
+
+                  // Remaining Amount - conditional based on auto-calculate
+                  if (!_autoCalculate)
+                    TextFormField(
+                      controller: _remainingAmountController,
+                      decoration: const InputDecoration(
+                        labelText: 'Remaining Amount',
+                        border: OutlineInputBorder(),
+                        prefixText: 'Rs. ',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (v) => v == null || v.isEmpty ? 'Enter remaining amount' : null,
                     ),
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v == null || v.isEmpty ? 'Enter remaining amount' : null,
-                  ),
+
+                  if (_autoCalculate)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withAlpha(20),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.withAlpha(40)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Remaining amount will be calculated automatically based on payments made since start date',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _monthlyPaymentController,
-                    decoration: const InputDecoration(
-                      labelText: 'Monthly Payment (Optional)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: _autoCalculate ? 'Monthly Payment (Required)' : 'Monthly Payment (Optional)',
+                      border: const OutlineInputBorder(),
                       prefixText: 'Rs. ',
                     ),
                     keyboardType: TextInputType.number,
+                    validator: _autoCalculate
+                      ? (v) => v == null || v.isEmpty ? 'Enter monthly payment for auto-calculate' : null
+                      : null,
+                    onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -228,8 +409,10 @@ class _LiabilityFormScreenState extends State<LiabilityFormScreen> {
                       labelText: 'Interest Rate % (Optional)',
                       border: OutlineInputBorder(),
                       suffixText: '%',
+                      helperText: 'Annual interest rate for accurate calculations',
                     ),
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -239,7 +422,7 @@ class _LiabilityFormScreenState extends State<LiabilityFormScreen> {
                           onPressed: () => _selectDate(context, true),
                           icon: const Icon(Icons.calendar_today),
                           label: Text(_startDate == null
-                            ? 'Start Date (Optional)'
+                            ? _autoCalculate ? 'Start Date (Required)' : 'Start Date (Optional)'
                             : DateFormat('dd/MM/yyyy').format(_startDate!)),
                         ),
                       ),
@@ -274,6 +457,51 @@ class _LiabilityFormScreenState extends State<LiabilityFormScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
+
+                  // Auto-Calculate Toggle
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _autoCalculate ? Colors.orange.withAlpha(15) : Colors.grey.withAlpha(10),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _autoCalculate ? Colors.orange.withAlpha(50) : Colors.grey.withAlpha(30),
+                      ),
+                    ),
+                    child: SwitchListTile(
+                      title: Row(
+                        children: [
+                          Icon(
+                            Icons.calculate,
+                            color: _autoCalculate ? Colors.orange[700] : Colors.grey,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Enable Auto-Calculate'),
+                        ],
+                      ),
+                      subtitle: Text(
+                        _autoCalculate
+                          ? 'Balance automatically tracks payments since start date'
+                          : 'Remaining amount is updated manually',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                      value: _autoCalculate,
+                      onChanged: (value) {
+                        setState(() {
+                          _autoCalculate = value;
+                          if (value && _remainingAmountController.text.isEmpty) {
+                            _remainingAmountController.text = _originalAmountController.text;
+                          }
+                        });
+                      },
+                      activeColor: Colors.orange,
+                    ),
+                  ),
+
+                  // Auto-Calculate Preview
+                  _buildAutoCalculatePreview(),
+
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _descriptionController,
                     decoration: const InputDecoration(
@@ -300,4 +528,3 @@ class _LiabilityFormScreenState extends State<LiabilityFormScreen> {
     );
   }
 }
-

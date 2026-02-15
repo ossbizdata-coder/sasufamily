@@ -57,6 +57,26 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
     return _policies.fold(0, (sum, policy) => sum + policy.coverageAmount);
   }
 
+  bool get _hasLifeInsurance {
+    return _policies.any((p) => p.type == 'LIFE');
+  }
+
+  bool get _hasHealthInsurance {
+    return _policies.any((p) => p.type == 'MEDICAL');
+  }
+
+  bool get _hasVehicleInsurance {
+    return _policies.any((p) => p.type == 'VEHICLE');
+  }
+
+  bool get _hasHomeInsurance {
+    return _policies.any((p) => p.type == 'HOME');
+  }
+
+  bool get _hasEducationInsurance {
+    return _policies.any((p) => p.type == 'EDUCATION');
+  }
+
   IconData _getInsuranceIcon(String type) {
     switch (type) {
       case 'LIFE':
@@ -255,10 +275,77 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
               ),
             ),
 
+            // ===== COVERAGE SUMMARY =====
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              color: Colors.grey.shade50,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildCoverageIndicator('Life', Icons.favorite, _hasLifeInsurance),
+                  _buildCoverageIndicator('Health', Icons.health_and_safety, _hasHealthInsurance),
+                  _buildCoverageIndicator('Education', Icons.school, _hasEducationInsurance),
+                  _buildCoverageIndicator('Vehicle', Icons.directions_car, _hasVehicleInsurance),
+                  _buildCoverageIndicator('Home', Icons.home, _hasHomeInsurance),
+                ],
+              ),
+            ),
+
             Expanded(child: _buildGroupedInsuranceList()),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCoverageIndicator(String label, IconData icon, bool hasCoverage) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: hasCoverage
+                    ? Colors.green.withAlpha(20)
+                    : Colors.red.withAlpha(20),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: hasCoverage
+                      ? Colors.green.withAlpha(50)
+                      : Colors.red.withAlpha(50),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: hasCoverage ? Colors.green : Colors.red.withAlpha(100),
+              ),
+            ),
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Icon(
+                hasCoverage ? Icons.check_circle : Icons.cancel,
+                size: 14,
+                color: hasCoverage ? Colors.green : Colors.red,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: hasCoverage ? Colors.green.shade700 : Colors.red.shade400,
+          ),
+        ),
+      ],
     );
   }
 

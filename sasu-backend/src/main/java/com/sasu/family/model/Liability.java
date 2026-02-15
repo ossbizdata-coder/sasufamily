@@ -68,6 +68,15 @@ public class Liability {
     @Column(nullable = false)
     private Boolean active = true;
 
+    /**
+     * If true, the remaining amount is automatically calculated based on:
+     * - Original amount, monthly payment, interest rate, and start date
+     * This allows the app to show real-time remaining balance without manual updates
+     */
+    @Column(name = "auto_calculate", nullable = false)
+    @Builder.Default
+    private Boolean autoCalculate = false;
+
     public enum LiabilityType {
         HOME_LOAN,
         VEHICLE_LOAN,

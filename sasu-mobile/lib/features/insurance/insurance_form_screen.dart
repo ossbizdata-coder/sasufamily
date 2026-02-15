@@ -103,6 +103,14 @@ class _InsuranceFormScreenState extends State<InsuranceFormScreen> {
     }
   }
 
+  /// Parse a number string that may contain commas
+  double? _parseNumber(String text) {
+    if (text.isEmpty) return null;
+    // Remove commas and spaces
+    final cleanText = text.replaceAll(',', '').replaceAll(' ', '').trim();
+    return double.tryParse(cleanText);
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -114,20 +122,16 @@ class _InsuranceFormScreenState extends State<InsuranceFormScreen> {
         policyName: _policyNameController.text.trim(),
         type: _selectedType,
         provider: _providerController.text.trim(),
-        coverageAmount: double.parse(_coverageAmountController.text.trim()),
-        premiumAmount: _premiumAmountController.text.isNotEmpty
-          ? double.parse(_premiumAmountController.text.trim())
-          : null,
+        coverageAmount: _parseNumber(_coverageAmountController.text) ?? 0,
+        premiumAmount: _parseNumber(_premiumAmountController.text),
         premiumFrequency: _premiumAmountController.text.isNotEmpty
           ? _selectedPremiumFrequency
           : null,
         startDate: _startDate?.toIso8601String(),
         maturityYear: _maturityYearController.text.isNotEmpty
-          ? int.parse(_maturityYearController.text.trim())
+          ? int.tryParse(_maturityYearController.text.trim())
           : null,
-        maturityBenefit: _maturityBenefitController.text.isNotEmpty
-          ? double.parse(_maturityBenefitController.text.trim())
-          : null,
+        maturityBenefit: _parseNumber(_maturityBenefitController.text),
         beneficiary: _beneficiaryController.text.trim(),
         description: _descriptionController.text.trim().isNotEmpty
           ? _descriptionController.text.trim()

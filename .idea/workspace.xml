@@ -5,11 +5,26 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8a047d52-5711-42ba-b7e5-1045596a54e1" name="Changes" comment="more changes">
+      <change afterPath="$PROJECT_DIR$/AUTO_CALCULATION_FEATURE.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sasu-backend/add_auto_calculation_columns.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sasu-mobile/lib/core/utils/value_calculator.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sasu-backend/target/family-1.0.0.jar" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-backend/target/family-1.0.0.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sasu-backend/target/family-1.0.0.jar.original" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-backend/target/family-1.0.0.jar.original" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sasu-backend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-backend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sasu-mobile/lib/core/constants/api_config.dart" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-mobile/lib/core/constants/api_config.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/API_SUMMARY.md" beforeDir="false" afterPath="$PROJECT_DIR$/API_SUMMARY.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DATABASE_GUIDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/DATABASE_GUIDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DEPLOYMENT_INSTRUCTIONS.md" beforeDir="false" afterPath="$PROJECT_DIR$/DEPLOYMENT_INSTRUCTIONS.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PASSWORD_RESET_GUIDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/PASSWORD_RESET_GUIDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/REGISTRATION_FEATURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/REGISTRATION_FEATURE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/deploy-to-vps.sh" beforeDir="false" afterPath="$PROJECT_DIR$/deploy-to-vps.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-sasu.conf" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-sasu.conf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasu-backend/src/main/java/com/sasu/family/model/Asset.java" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-backend/src/main/java/com/sasu/family/model/Asset.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasu-backend/src/main/java/com/sasu/family/model/Liability.java" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-backend/src/main/java/com/sasu/family/model/Liability.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasu-mobile/lib/data/models/asset.dart" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-mobile/lib/data/models/asset.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasu-mobile/lib/data/models/liability.dart" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-mobile/lib/data/models/liability.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasu-mobile/lib/features/assets/asset_form_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-mobile/lib/features/assets/asset_form_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasu-mobile/lib/features/assets/assets_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-mobile/lib/features/assets/assets_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasu-mobile/lib/features/liabilities/liabilities_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-mobile/lib/features/liabilities/liabilities_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sasu-mobile/lib/features/liabilities/liability_form_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/sasu-mobile/lib/features/liabilities/liability_form_screen.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,6 +33,13 @@
   </component>
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Dart File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
@@ -41,25 +63,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Flutter.SaSuFamily.executor": "Run",
-    "Flutter.main.dart.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "main",
-    "io.flutter.reload.alreadyRun": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/dev/repository/myproject/osd-foodhut",
-    "settings.editor.selected.configurable": "preferences.general",
-    "show.migrate.to.gradle.popup": "false"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Flutter.SaSuFamily.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/dev/repository/myproject/oss-mobile&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\dev\repository\myproject\sasufamily\sasu-backend" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="SaSuFamily" type="FlutterRunConfigurationType" factoryName="Flutter">
       <option name="filePath" value="$PROJECT_DIR$/sasu-mobile/lib/main.dart" />
@@ -113,6 +140,17 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="more changes" />
     <option name="LAST_COMMIT_MESSAGE" value="more changes" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/sasu-mobile/lib/features/dashboard/dashboard_screen.dart</url>
+          <line>290</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>

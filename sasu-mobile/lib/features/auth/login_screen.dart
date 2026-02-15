@@ -5,9 +5,11 @@
 
 import 'package:flutter/material.dart';
 import '../../data/services/api_service.dart';
+import '../../data/services/pin_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'register_screen.dart';
+import 'pin_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -49,11 +51,32 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => DashboardScreen(user: user),
-          ),
-        );
+        // Check if PIN is set up
+        final isPinSetUp = await PinService.isPinSetUp();
+
+        if (!isPinSetUp) {
+          // PIN setup is mandatory - navigate directly to PIN setup
+          if (mounted) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PinScreen(
+                  mode: PinMode.setup,
+                  onSuccess: () => Navigator.pop(context),
+                ),
+              ),
+            );
+          }
+        }
+
+        // Navigate to dashboard
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => DashboardScreen(user: user),
+            ),
+          );
+        }
       }
     } catch (e) {
       setState(() {

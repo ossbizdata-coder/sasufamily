@@ -52,7 +52,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
   }
 
   double get _totalAssets {
-    return _assets.fold(0, (sum, asset) => sum + asset.currentValue);
+    return _assets.fold(0, (sum, asset) => sum + asset.valueInLKR);
   }
 
   IconData _getAssetIcon(String type) {
@@ -267,7 +267,9 @@ class _AssetsScreenState extends State<AssetsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // First line: Asset name + Value
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Flexible(
                         child: Text(
@@ -277,112 +279,207 @@ class _AssetsScreenState extends State<AssetsScreen> {
                             fontSize: 15,
                             color: Colors.grey.shade800,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (asset.isLiquid) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: Colors.blue.shade300,
-                              width: 1,
+                      const SizedBox(width: 8),
+                      // Show value with currency
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            asset.isUSD
+                              ? 'USD ${asset.calculatedCurrentValue.toStringAsFixed(2)}'
+                              : _formatCurrency(asset.calculatedCurrentValue),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryGreen,
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.water_drop,
-                                size: 10,
-                                color: Colors.blue.shade700,
+                          // Show LKR equivalent for USD assets
+                          if (asset.isUSD)
+                            Text(
+                              '≈ ${_formatCurrency(asset.valueInLKR)}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey.shade600,
                               ),
-                              const SizedBox(width: 2),
-                              Text(
-                                'Liquid',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.blue.shade700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      if (asset.isInvestment) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.shade50,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: Colors.purple.shade300,
-                              width: 1,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.trending_up,
-                                size: 10,
-                                color: Colors.purple.shade700,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                'Investment',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.purple.shade700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ],
                   ),
-                  if (asset.purchaseYear != null) ...[
+                  // Badges on new line
+                  if (asset.isLiquid || asset.isInvestment || asset.autoGrowth || asset.isUSD) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        // USD badge
+                        if (asset.isUSD)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Colors.amber.shade400,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.attach_money,
+                                  size: 10,
+                                  color: Colors.amber.shade800,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  'USD',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.amber.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (asset.isLiquid)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Colors.blue.shade300,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.water_drop,
+                                  size: 10,
+                                  color: Colors.blue.shade700,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  'Liquid',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (asset.isInvestment)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Colors.purple.shade300,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.trending_up,
+                                  size: 10,
+                                  color: Colors.purple.shade700,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  'Investment',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.purple.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (asset.autoGrowth)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Colors.green.shade300,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.auto_graph,
+                                  size: 10,
+                                  color: Colors.green.shade700,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '+${asset.effectiveGrowthRate.toStringAsFixed(0)}%/yr',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                  // Year and gain on same line
+                  if (asset.purchaseYear != null || (asset.autoGrowth && asset.totalGain > 0)) ...[
                     const SizedBox(height: 2),
-                    Text(
-                      'Since ${asset.purchaseYear}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade600,
-                      ),
+                    Row(
+                      children: [
+                        if (asset.purchaseYear != null)
+                          Text(
+                            'Since ${asset.purchaseYear}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        if (asset.purchaseYear != null && asset.autoGrowth && asset.totalGain > 0)
+                          Text(
+                            '  •  ',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        if (asset.autoGrowth && asset.totalGain > 0)
+                          Text(
+                            '+${_formatCurrency(asset.totalGain)} gain',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green.shade600,
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.primaryGreen.withValues(alpha: 0.15),
-                    AppTheme.primaryGreen.withValues(alpha: 0.08),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                _formatCurrency(asset.currentValue),
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryGreen,
-                ),
               ),
             ),
             if (widget.user.isAdmin) ...[
@@ -404,9 +501,14 @@ class _AssetsScreenState extends State<AssetsScreen> {
                           'name': asset.name,
                           'type': asset.type,
                           'currentValue': asset.currentValue,
+                          'purchaseValue': asset.purchaseValue,
                           'purchaseYear': asset.purchaseYear,
+                          'purchaseDate': asset.purchaseDate,
+                          'yearlyGrowthRate': asset.yearlyGrowthRate,
                           'isLiquid': asset.isLiquid,
                           'isInvestment': asset.isInvestment,
+                          'autoGrowth': asset.autoGrowth,
+                          'currency': asset.currency,
                         }
                       },
                     );

@@ -63,7 +63,7 @@ class _LiquidityScreenState extends State<LiquidityScreen> {
   }
 
   double get _totalLiquidAssets {
-    return _liquidAssets.fold(0.0, (sum, asset) => sum + asset.currentValue);
+    return _liquidAssets.fold(0.0, (sum, asset) => sum + asset.valueInLKR);
   }
 
   @override
@@ -311,7 +311,7 @@ class _LiquidityScreenState extends State<LiquidityScreen> {
                   ),
                 ),
                 Text(
-                  _formatCurrency(asset.currentValue),
+                  _formatCurrency(asset.valueInLKR),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

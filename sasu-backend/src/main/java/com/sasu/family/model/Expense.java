@@ -55,6 +55,7 @@ public class Expense {
         SHOPPING,
         HOUSING,
         INSURANCE,
+        LOAN_EMI,
         SAVINGS,
         OTHER
     }
@@ -75,6 +76,10 @@ public class Expense {
             return amount.divide(BigDecimal.valueOf(12), 2, BigDecimal.ROUND_HALF_UP);
         }
         return BigDecimal.ZERO;
+    }
+
+    public boolean isNeed() {
+        return isNeed != null && isNeed;
     }
 }
 

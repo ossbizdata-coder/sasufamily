@@ -32,7 +32,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
     'HOUSING',
     'UTILITIES',
     'FOOD',
-    'TRANSPORT',
+    'TRANSPORTATION',
     'HEALTHCARE',
     'EDUCATION',
     'INSURANCE',
@@ -76,11 +76,15 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
 
     setState(() => _isSubmitting = true);
 
+    // Parse amount - remove commas
+    final amountText = _amountController.text.replaceAll(',', '').replaceAll(' ', '').trim();
+    final amount = double.tryParse(amountText) ?? 0;
+
     try {
       final expense = Expense(
         id: widget.expense?.id,
         name: _nameController.text,
-        amount: double.parse(_amountController.text),
+        amount: amount,
         category: _category,
         frequency: _frequency,
         description: _descriptionController.text.isEmpty

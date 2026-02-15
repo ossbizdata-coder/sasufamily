@@ -1,3 +1,4 @@
+com\sasu\family\model\AppConfig$AppConfigBuilder.class
 com\sasu\family\dto\FutureProjectionDTO$FutureProjectionDTOBuilder.class
 com\sasu\family\dto\LiabilitySummaryDTO$LiabilitySummaryDTOBuilder.class
 com\sasu\family\migration\AssetTypeEnumMigration.class
@@ -26,6 +27,7 @@ com\sasu\family\service\AssetService.class
 com\sasu\family\model\Insurance$PremiumFrequency.class
 com\sasu\family\dto\FutureProjectionDTO$YearlyProjection$YearlyProjectionBuilder.class
 com\sasu\family\dto\AssetSummaryDTO.class
+com\sasu\family\controller\ConfigController.class
 com\sasu\family\config\CorsConfig.class
 com\sasu\family\model\User$UserRole.class
 com\sasu\family\dto\DashboardSummaryDTO.class
@@ -37,14 +39,17 @@ com\sasu\family\dto\ScoreBreakdownDTO$ScoreBreakdownDTOBuilder.class
 com\sasu\family\migration\AddIsInvestmentToAssets.class
 com\sasu\family\dto\LiabilitySummaryDTO.class
 com\sasu\family\service\FutureProjectionService.class
+com\sasu\family\model\AppConfig.class
 com\sasu\family\security\CustomUserDetailsService.class
 com\sasu\family\model\Asset.class
 com\sasu\family\controller\ExpenseController.class
 com\sasu\family\dto\ScoreBreakdownDTO.class
 com\sasu\family\model\Expense$ExpenseCategory.class
 com\sasu\family\model\Liability$LiabilityBuilder.class
+com\sasu\family\repository\AppConfigRepository.class
 com\sasu\family\model\User.class
 com\sasu\family\controller\IncomeController.class
+com\sasu\family\service\AppConfigService.class
 com\sasu\family\dto\RegisterRequest.class
 com\sasu\family\security\JwtAuthFilter.class
 com\sasu\family\config\DatabaseMigration.class

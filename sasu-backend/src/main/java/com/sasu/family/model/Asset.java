@@ -54,10 +54,17 @@ public class Asset {
 
     private Integer purchaseYear;
 
+    /**
+     * Full purchase date for precise auto-growth calculations
+     * Stored as String (YYYY-MM-DD) to avoid SQLite date parsing issues
+     */
+    @Column(name = "purchase_date")
+    private String purchaseDate;
+
     @Column(length = 1000)
     private String description;
 
-    @Column(precision = 5, scale = 2)
+    @Column(name = "yearly_growth_rate", precision = 5, scale = 2)
     private BigDecimal yearlyGrowthRate; // Annual appreciation percentage
 
     private LocalDate lastUpdated;
@@ -82,6 +89,23 @@ public class Asset {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isInvestment = false;
+
+    /**
+     * If true, the current value is automatically calculated based on:
+     * - Purchase value/date and yearly growth rate (compound interest)
+     * This allows assets like EPF, Land to automatically show appreciated values
+     */
+    @Column(name = "auto_growth", nullable = false)
+    @Builder.Default
+    private Boolean autoGrowth = false;
+
+    /**
+     * Currency of the asset value (LKR or USD)
+     * Used for multi-currency support
+     */
+    @Column(name = "currency", length = 3)
+    @Builder.Default
+    private String currency = "LKR";
 
     public enum AssetType {
         LAND,

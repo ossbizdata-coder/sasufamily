@@ -33,8 +33,45 @@ class ApiService {
   // Clear token
   static Future<void> clearToken() async {
     _token = null;
+    _cachedUser = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
+    await prefs.remove('cached_user');
+  }
+
+  // Cached user for quick access
+  static User? _cachedUser;
+
+  /// Check if user is logged in (has a valid token)
+  static Future<bool> isLoggedIn() async {
+    if (_token == null) {
+      await init();
+    }
+    return _token != null && _token!.isNotEmpty;
+  }
+
+  /// Get current logged in user
+  static Future<User?> getCurrentUser() async {
+    if (_cachedUser != null) return _cachedUser;
+
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('cached_user');
+    if (userJson != null) {
+      try {
+        _cachedUser = User.fromJson(jsonDecode(userJson));
+        return _cachedUser;
+      } catch (e) {
+        print('Failed to parse cached user: $e');
+      }
+    }
+    return null;
+  }
+
+  /// Cache user after login
+  static Future<void> _cacheUser(User user) async {
+    _cachedUser = user;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('cached_user', jsonEncode(user.toJson()));
   }
 
   // Get headers
@@ -46,6 +83,43 @@ class ApiService {
       headers['Authorization'] = 'Bearer $_token';
     }
     return headers;
+  }
+
+  // Generic GET request
+  static Future<Map<String, dynamic>?> get(String endpoint) async {
+    final url = '${ApiConfig.baseUrl}$endpoint';
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _getHeaders(),
+      ).timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      print('GET $endpoint failed: $e');
+    }
+    return null;
+  }
+
+  // Generic PUT request
+  static Future<Map<String, dynamic>?> put(String endpoint, Map<String, dynamic> data) async {
+    final url = '${ApiConfig.baseUrl}$endpoint';
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: _getHeaders(),
+        body: jsonEncode(data),
+      ).timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      print('PUT $endpoint failed: $e');
+    }
+    return null;
   }
 
   // Login
@@ -71,6 +145,7 @@ class ApiService {
         if (user.token != null) {
           await saveToken(user.token!);
         }
+        await _cacheUser(user);
         return user;
       } else {
         throw Exception('Login failed: ${response.body}');

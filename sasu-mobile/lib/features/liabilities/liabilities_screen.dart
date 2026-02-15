@@ -69,7 +69,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
   }
 
   double get _totalRemaining {
-    return _liabilities.fold(0, (sum, liability) => sum + liability.remainingAmount);
+    return _liabilities.fold(0, (sum, liability) => sum + liability.calculatedRemainingAmount);
   }
 
   double get _totalMonthly {
@@ -182,14 +182,17 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
   }
 
   Widget _buildLiabilityCard(Liability liability) {
-    final progress = 1 - (liability.remainingAmount / liability.originalAmount);
+    final progress = liability.progressPercent;
+    final remainingAmount = liability.calculatedRemainingAmount;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppTheme.warning.withValues(alpha: 0.3),
+          color: liability.isFullyPaid
+            ? AppTheme.success.withValues(alpha: 0.3)
+            : AppTheme.warning.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
@@ -212,21 +215,21 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppTheme.warning.withValues(alpha: 0.15),
-                        AppTheme.warning.withValues(alpha: 0.05),
+                        (liability.isFullyPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.15),
+                        (liability.isFullyPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.05),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppTheme.warning.withValues(alpha: 0.3),
+                      color: (liability.isFullyPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
                   child: Icon(
-                    _getLiabilityIcon(liability.type),
-                    color: AppTheme.warning,
+                    liability.isFullyPaid ? Icons.check_circle : _getLiabilityIcon(liability.type),
+                    color: liability.isFullyPaid ? AppTheme.success : AppTheme.warning,
                     size: 24,
                   ),
                 ),
@@ -235,33 +238,91 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        liability.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Colors.grey.shade800,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              liability.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+                          ),
+                          if (liability.autoCalculate) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade50,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: Colors.orange.shade300,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.calculate,
+                                    size: 10,
+                                    color: Colors.orange.shade700,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    'Auto',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 2),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppTheme.success.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: AppTheme.success.withValues(alpha: 0.3),
-                            width: 1,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: liability.isFullyPaid
+                                ? AppTheme.success.withValues(alpha: 0.2)
+                                : AppTheme.success.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: AppTheme.success.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              liability.isFullyPaid
+                                ? '✓ Paid Off!'
+                                : '${(progress * 100).toStringAsFixed(0)}% paid',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.success,
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          '${(progress * 100).toStringAsFixed(0)}% paid',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.success,
-                          ),
-                        ),
+                          if (!liability.isFullyPaid && liability.monthsRemaining > 0) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              liability.remainingTimeFormatted,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -271,15 +332,15 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppTheme.warning.withValues(alpha: 0.15),
-                        AppTheme.warning.withValues(alpha: 0.08),
+                        (liability.isFullyPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.15),
+                        (liability.isFullyPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.08),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppTheme.warning.withValues(alpha: 0.3),
+                      color: (liability.isFullyPaid ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -287,11 +348,11 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        _formatCurrency(liability.remainingAmount),
-                        style: const TextStyle(
+                        _formatCurrency(remainingAmount),
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.warning,
+                          color: liability.isFullyPaid ? AppTheme.success : AppTheme.warning,
                         ),
                       ),
                     ],
@@ -337,6 +398,16 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    if (liability.autoCalculate && liability.totalInterestPaid > 0) ...[
+                      const SizedBox(width: 12),
+                      Text(
+                        'Interest paid: ${_formatCurrency(liability.totalInterestPaid)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

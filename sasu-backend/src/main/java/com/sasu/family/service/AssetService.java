@@ -26,6 +26,11 @@ public class AssetService {
     public Asset createAsset(Asset asset) {
         asset.setLastUpdated(LocalDate.now());
         asset.setActive(true);
+        // Ensure defaults for boolean/string fields that might be null from JSON
+        if (asset.getIsLiquid() == null) asset.setIsLiquid(false);
+        if (asset.getIsInvestment() == null) asset.setIsInvestment(false);
+        if (asset.getAutoGrowth() == null) asset.setAutoGrowth(false);
+        if (asset.getCurrency() == null) asset.setCurrency("LKR");
         return assetRepository.save(asset);
     }
 
@@ -37,9 +42,13 @@ public class AssetService {
         asset.setCurrentValue(assetDetails.getCurrentValue());
         asset.setPurchaseValue(assetDetails.getPurchaseValue());
         asset.setPurchaseYear(assetDetails.getPurchaseYear());
+        asset.setPurchaseDate(assetDetails.getPurchaseDate());
         asset.setDescription(assetDetails.getDescription());
         asset.setYearlyGrowthRate(assetDetails.getYearlyGrowthRate());
-        asset.setIsLiquid(assetDetails.getIsLiquid());
+        asset.setIsLiquid(assetDetails.getIsLiquid() != null ? assetDetails.getIsLiquid() : false);
+        asset.setIsInvestment(assetDetails.getIsInvestment() != null ? assetDetails.getIsInvestment() : false);
+        asset.setAutoGrowth(assetDetails.getAutoGrowth() != null ? assetDetails.getAutoGrowth() : false);
+        asset.setCurrency(assetDetails.getCurrency() != null ? assetDetails.getCurrency() : "LKR");
         asset.setLastUpdated(LocalDate.now());
 
         return assetRepository.save(asset);

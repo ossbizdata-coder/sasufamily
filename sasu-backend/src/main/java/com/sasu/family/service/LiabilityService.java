@@ -39,6 +39,7 @@ public class LiabilityService {
         liability.setStartDate(liabilityDetails.getStartDate());
         liability.setEndDate(liabilityDetails.getEndDate());
         liability.setDescription(liabilityDetails.getDescription());
+        liability.setAutoCalculate(liabilityDetails.getAutoCalculate() != null ? liabilityDetails.getAutoCalculate() : false);
 
         return liabilityRepository.save(liability);
     }

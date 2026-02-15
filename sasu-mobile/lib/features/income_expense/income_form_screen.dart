@@ -68,11 +68,15 @@ class _IncomeFormScreenState extends State<IncomeFormScreen> {
 
     setState(() => _isSubmitting = true);
 
+    // Parse amount - remove commas
+    final amountText = _amountController.text.replaceAll(',', '').replaceAll(' ', '').trim();
+    final amount = double.tryParse(amountText) ?? 0;
+
     try {
       final income = Income(
         id: widget.income?.id,
         source: _sourceController.text,
-        amount: double.parse(_amountController.text),
+        amount: amount,
         type: _type,
         frequency: _frequency,
         description: _descriptionController.text.isEmpty

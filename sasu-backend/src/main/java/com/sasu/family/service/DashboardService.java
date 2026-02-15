@@ -110,6 +110,17 @@ public class DashboardService {
     }
 
     /**
+     * Calculate monthly essential expenses (needs only) for emergency fund calculation
+     */
+    private BigDecimal calculateMonthlyEssentialExpenses() {
+        List<Expense> expenses = expenseRepository.findByActiveTrue();
+        return expenses.stream()
+                .filter(Expense::isNeed)  // Only needs, not wants
+                .map(Expense::getMonthlyAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
      * Calculate comprehensive wealth health score using 6 pillars
      */
     private ScoreBreakdownDTO calculateScoreBreakdown(
@@ -145,8 +156,9 @@ public class DashboardService {
 
         // 4. LIQUIDITY (15 points max)
         BigDecimal liquidAssets = calculateLiquidAssets();
-        BigDecimal emergencyFundMonths = monthlyExpenses.compareTo(BigDecimal.ZERO) > 0
-                ? liquidAssets.divide(monthlyExpenses, 1, RoundingMode.HALF_UP)
+        BigDecimal monthlyEssentialExpenses = calculateMonthlyEssentialExpenses();
+        BigDecimal emergencyFundMonths = monthlyEssentialExpenses.compareTo(BigDecimal.ZERO) > 0
+                ? liquidAssets.divide(monthlyEssentialExpenses, 1, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
         int liquidityScore = calculateLiquidityScore(emergencyFundMonths);
         String liquidityStatus = getLiquidityStatus(emergencyFundMonths);
@@ -164,9 +176,16 @@ public class DashboardService {
         BigDecimal coverageRatio = annualExpenses.compareTo(BigDecimal.ZERO) > 0
                 ? totalCoverage.divide(annualExpenses, 1, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
-        boolean hasHealthIns = hasInsuranceType("HEALTH");
+
+        // Check all insurance types
+        boolean hasHealthIns = hasInsuranceType("MEDICAL");
         boolean hasLifeIns = hasInsuranceType("LIFE");
-        int protectionScore = calculateProtectionScore(coverageRatio, hasHealthIns, hasLifeIns);
+        boolean hasEducationIns = hasInsuranceType("EDUCATION");
+        boolean hasVehicleIns = hasInsuranceType("VEHICLE");
+        boolean hasHomeIns = hasInsuranceType("HOME");
+
+        int protectionScore = calculateProtectionScore(coverageRatio, hasHealthIns, hasLifeIns,
+                hasEducationIns, hasVehicleIns, hasHomeIns);
         String protectionStatus = getProtectionStatus(protectionScore);
 
         return ScoreBreakdownDTO.builder()
@@ -264,18 +283,27 @@ public class DashboardService {
     }
 
     // 6. Protection Score (0-10)
-    private int calculateProtectionScore(BigDecimal coverageRatio, boolean hasHealth, boolean hasLife) {
+    private int calculateProtectionScore(BigDecimal coverageRatio, boolean hasHealth, boolean hasLife,
+            boolean hasEducation, boolean hasVehicle, boolean hasHome) {
         int score = 0;
 
-        // Coverage ratio points (max 6)
-        if (coverageRatio.compareTo(BigDecimal.valueOf(10)) >= 0) score += 6; // 10+ years covered
-        else if (coverageRatio.compareTo(BigDecimal.valueOf(5)) >= 0) score += 4; // 5-10 years
+        // Coverage ratio points (max 4)
+        if (coverageRatio.compareTo(BigDecimal.valueOf(10)) >= 0) score += 4; // 10+ years covered
+        else if (coverageRatio.compareTo(BigDecimal.valueOf(5)) >= 0) score += 3; // 5-10 years
         else if (coverageRatio.compareTo(BigDecimal.valueOf(2)) >= 0) score += 2; // 2-5 years
         else if (coverageRatio.compareTo(BigDecimal.valueOf(1)) >= 0) score += 1; // 1-2 years
 
-        // Essential insurance points
-        if (hasHealth) score += 2;
+        // Essential insurance points (max 6)
+        // Life & Health are most critical (2 points each)
         if (hasLife) score += 2;
+        if (hasHealth) score += 2;
+
+        // Other important insurances (1 point each, max 2 additional)
+        int otherInsCount = 0;
+        if (hasEducation) otherInsCount++;
+        if (hasVehicle) otherInsCount++;
+        if (hasHome) otherInsCount++;
+        score += Math.min(2, otherInsCount); // Cap at 2 additional points
 
         return Math.min(10, score);
     }

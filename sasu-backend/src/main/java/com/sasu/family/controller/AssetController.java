@@ -3,6 +3,7 @@ package com.sasu.family.controller;
 import com.sasu.family.model.Asset;
 import com.sasu.family.service.AssetService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ import java.util.List;
 @RequestMapping("/api/assets")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@Slf4j
 public class AssetController {
 
     private final AssetService assetService;
@@ -38,12 +40,16 @@ public class AssetController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Asset> createAsset(@RequestBody Asset asset) {
+        log.info("Creating asset: name={}, autoGrowth={}, purchaseDate={}, growthRate={}",
+            asset.getName(), asset.getAutoGrowth(), asset.getPurchaseDate(), asset.getYearlyGrowthRate());
         return ResponseEntity.ok(assetService.createAsset(asset));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Asset> updateAsset(@PathVariable Long id, @RequestBody Asset asset) {
+        log.info("Updating asset {}: name={}, autoGrowth={}, purchaseDate={}, growthRate={}",
+            id, asset.getName(), asset.getAutoGrowth(), asset.getPurchaseDate(), asset.getYearlyGrowthRate());
         return ResponseEntity.ok(assetService.updateAsset(id, asset));
     }
 

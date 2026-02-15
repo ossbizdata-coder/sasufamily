@@ -26,6 +26,9 @@ class _IncomeExpenseScreenState extends State<IncomeExpenseScreen>
   String? _error;
   late TabController _tabController;
 
+  // Track expanded state for expense categories
+  final Map<String, bool> _expandedCategories = {};
+
   @override
   void initState() {
     super.initState();
@@ -280,11 +283,268 @@ class _IncomeExpenseScreenState extends State<IncomeExpenseScreen>
   Widget _buildExpenseList() {
     if (_expenses.isEmpty) return _emptyState(Icons.receipt_long, 'No expenses added', _addExpense);
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-      itemCount: _expenses.length,
-      itemBuilder: (_, i) => _buildExpenseCard(_expenses[i]),
+    // Group expenses by category
+    final Map<String, List<Expense>> grouped = {};
+    for (final expense in _expenses) {
+      grouped.putIfAbsent(expense.category, () => []).add(expense);
+    }
+
+    // Sort categories alphabetically
+    final sortedCategories = grouped.keys.toList()..sort();
+
+    // Initialize expansion state
+    for (final category in sortedCategories) {
+      _expandedCategories.putIfAbsent(category, () => false);
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
+      child: Column(
+        children: sortedCategories.map((category) {
+          final expenses = grouped[category]!;
+          final categoryTotal = expenses.fold(0.0, (sum, e) => sum + e.getMonthlyAmount());
+          final needsCount = expenses.where((e) => e.isNeed).length;
+          final wantsCount = expenses.length - needsCount;
+          final isExpanded = _expandedCategories[category] ?? false;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Category Header (tappable)
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _expandedCategories[category] = !isExpanded;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _getCategoryColor(category).withAlpha(25),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            _getCategoryIcon(category),
+                            color: _getCategoryColor(category),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _formatCategoryName(category),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Text(
+                                    '${expenses.length} items',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  if (needsCount > 0) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade50,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        '$needsCount need${needsCount > 1 ? 's' : ''}',
+                                        style: TextStyle(fontSize: 9, color: Colors.blue.shade700),
+                                      ),
+                                    ),
+                                  ],
+                                  if (wantsCount > 0) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple.shade50,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        '$wantsCount want${wantsCount > 1 ? 's' : ''}',
+                                        style: TextStyle(fontSize: 9, color: Colors.purple.shade700),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          _formatCurrency(categoryTotal),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                          color: Colors.grey.shade500,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Expanded expense items
+                if (isExpanded)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                    ),
+                    child: Column(
+                      children: expenses.map((expense) => _buildCompactExpenseItem(expense)).toList(),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
     );
+  }
+
+  Widget _buildCompactExpenseItem(Expense expense) {
+    return InkWell(
+      onTap: widget.user.isAdmin ? () => _editExpense(expense) : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: Colors.grey.shade200, width: 1),
+          ),
+        ),
+        child: Row(
+          children: [
+            // Need/Want indicator
+            Container(
+              width: 4,
+              height: 28,
+              decoration: BoxDecoration(
+                color: expense.isNeed ? Colors.blue : Colors.purple,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    expense.name,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    expense.frequency,
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _formatCurrency(expense.getMonthlyAmount()),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.orange.shade700,
+                  ),
+                ),
+                Text(
+                  '/month',
+                  style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+            if (widget.user.isAdmin) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _deleteExpense(expense),
+                child: Icon(Icons.delete_outline, size: 18, color: Colors.red.shade300),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatCategoryName(String category) {
+    return category.replaceAll('_', ' ').split(' ').map((word) =>
+      word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : ''
+    ).join(' ');
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'FOOD': return Icons.restaurant;
+      case 'UTILITIES': return Icons.power;
+      case 'TRANSPORTATION': return Icons.directions_car;
+      case 'EDUCATION': return Icons.school;
+      case 'HEALTHCARE': return Icons.local_hospital;
+      case 'ENTERTAINMENT': return Icons.movie;
+      case 'SHOPPING': return Icons.shopping_bag;
+      case 'HOUSING': return Icons.home;
+      case 'INSURANCE': return Icons.health_and_safety;
+      case 'LOAN_EMI': return Icons.account_balance;
+      case 'SAVINGS': return Icons.savings;
+      default: return Icons.receipt;
+    }
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'FOOD': return Colors.orange;
+      case 'UTILITIES': return Colors.blue;
+      case 'TRANSPORTATION': return Colors.green;
+      case 'EDUCATION': return Colors.purple;
+      case 'HEALTHCARE': return Colors.red;
+      case 'ENTERTAINMENT': return Colors.pink;
+      case 'SHOPPING': return Colors.teal;
+      case 'HOUSING': return Colors.brown;
+      case 'INSURANCE': return Colors.indigo;
+      case 'LOAN_EMI': return Colors.deepOrange;
+      case 'SAVINGS': return Colors.green.shade700;
+      default: return Colors.grey;
+    }
   }
 
   Widget _buildExpenseCard(Expense expense) {

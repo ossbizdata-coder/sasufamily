@@ -11,6 +11,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../data/models/asset.dart';
+import '../../data/models/liability.dart';
 import '../../data/models/user.dart';
 import '../../data/services/api_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -29,6 +31,10 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
   bool _isLoading = true;
   String? _error;
 
+  // Store asset and liability lists for showing details
+  List<Asset> _allAssets = [];
+  List<Liability> _allLiabilities = [];
+
   // Current values
   double _currentAssets = 0;
   double _currentLiabilities = 0;
@@ -37,6 +43,10 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
   double _currentLiquidAssets = 0;
   double _currentInvestments = 0;
   double _currentInsuranceCoverage = 0;
+
+  // Filtered lists for quick access
+  List<Asset> get _investmentAssets => _allAssets.where((a) => a.isInvestment).toList();
+  List<Asset> get _liquidAssets => _allAssets.where((a) => a.isLiquid).toList();
 
   // Projected values
   Map<String, double> _projectedValues = {};
@@ -69,22 +79,26 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
       final expenses = await ApiService.getExpenses();
       final insurances = await ApiService.getInsurance();
 
-      _currentAssets = assets.fold(0.0, (sum, a) => sum + a.currentValue);
-      _currentLiabilities = liabilities.fold(0.0, (sum, l) => sum + l.remainingAmount);
+      // Store lists for showing details
+      _allAssets = assets;
+      _allLiabilities = liabilities;
+
+      _currentAssets = assets.fold(0.0, (sum, a) => sum + a.valueInLKR);
+      _currentLiabilities = liabilities.fold(0.0, (sum, l) => sum + l.calculatedRemainingAmount);
 
       // Calculate monthly income and expenses
       _currentIncome = incomes.fold(0.0, (sum, income) => sum + income.getMonthlyAmount());
       _currentExpenses = expenses.fold(0.0, (sum, expense) => sum + expense.getMonthlyAmount());
 
-      // Liquid assets (cash, bank accounts, FD)
+      // Liquid assets (using isLiquid flag)
       _currentLiquidAssets = assets
-          .where((a) => ['SAVINGS', 'FIXED_DEPOSIT'].contains(a.type))
-          .fold(0.0, (sum, a) => sum + a.currentValue);
+          .where((a) => a.isLiquid)
+          .fold(0.0, (sum, a) => sum + a.valueInLKR);
 
-      // Investments (shares, mutual funds, retirement)
+      // Investments (using isInvestment flag)
       _currentInvestments = assets
-          .where((a) => ['SHARES', 'EPF', 'RETIREMENT_FUND'].contains(a.type))
-          .fold(0.0, (sum, a) => sum + a.currentValue);
+          .where((a) => a.isInvestment)
+          .fold(0.0, (sum, a) => sum + a.valueInLKR);
 
       _currentInsuranceCoverage = insurances.fold(0.0, (sum, i) => sum + i.coverageAmount);
 
@@ -198,6 +212,8 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
                               _currentAssets,
                               _projectedValues['assets'] ?? 0,
                               Colors.blue,
+                              itemCount: _allAssets.length,
+                              onTap: () => _showAssetListModal('All Assets', _allAssets),
                             ),
                             const SizedBox(height: 12),
                             _buildProjectionCard(
@@ -207,6 +223,8 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
                               _projectedValues['liabilities'] ?? 0,
                               Colors.red,
                               isDecrease: true,
+                              itemCount: _allLiabilities.length,
+                              onTap: () => _showLiabilityListModal('All Liabilities', _allLiabilities),
                             ),
                             const SizedBox(height: 12),
                             _buildProjectionCard(
@@ -223,6 +241,8 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
                               _currentLiquidAssets,
                               _projectedValues['liquidAssets'] ?? 0,
                               Colors.cyan,
+                              itemCount: _liquidAssets.length,
+                              onTap: () => _showAssetListModal('Liquid Assets', _liquidAssets),
                             ),
                             const SizedBox(height: 12),
                             _buildProjectionCard(
@@ -231,6 +251,8 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
                               _currentInvestments,
                               _projectedValues['investments'] ?? 0,
                               Colors.orange,
+                              itemCount: _investmentAssets.length,
+                              onTap: () => _showAssetListModal('Investment Assets', _investmentAssets),
                             ),
                             const SizedBox(height: 12),
                             _buildProjectionCard(
@@ -323,6 +345,8 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
     double projectedValue,
     Color color, {
     bool isDecrease = false,
+    int? itemCount,
+    VoidCallback? onTap,
   }) {
     final difference = projectedValue - currentValue;
     final percentageChange = currentValue != 0
@@ -332,33 +356,61 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withAlpha(30),
-                    borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withAlpha(30),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: color, size: 24),
                   ),
-                  child: Icon(icon, color: color, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                  if (itemCount != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: color.withAlpha(20),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$itemCount items',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: color,
+                            ),
+                          ),
+                          if (onTap != null) ...[
+                            const SizedBox(width: 4),
+                            Icon(Icons.chevron_right, size: 16, color: color),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -449,7 +501,228 @@ class _FinancialProjectionScreenState extends State<FinancialProjectionScreen> {
           ],
         ),
       ),
+      ),
     );
+  }
+
+  void _showAssetListModal(String title, List<Asset> assets) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.3,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '$title (${assets.length})',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    _formatCurrency(assets.fold(0.0, (sum, a) => sum + a.valueInLKR)),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: assets.length,
+                itemBuilder: (context, index) {
+                  final asset = assets[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppTheme.primaryGreen.withAlpha(30),
+                      child: Icon(
+                        _getAssetIcon(asset.type),
+                        color: AppTheme.primaryGreen,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      asset.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(asset.type.replaceAll('_', ' ')),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _formatCurrency(asset.valueInLKR),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryGreen,
+                          ),
+                        ),
+                        if (asset.autoGrowth && asset.yearlyGrowthRate != null)
+                          Text(
+                            '+${asset.yearlyGrowthRate!.toStringAsFixed(0)}%/yr',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.green[600],
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLiabilityListModal(String title, List<Liability> liabilities) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.3,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '$title (${liabilities.length})',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    _formatCurrency(liabilities.fold(0.0, (sum, l) => sum + l.calculatedRemainingAmount)),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orange[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: liabilities.length,
+                itemBuilder: (context, index) {
+                  final liability = liabilities[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.orange.withAlpha(30),
+                      child: Icon(
+                        Icons.account_balance,
+                        color: Colors.orange[700],
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      liability.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(liability.type.replaceAll('_', ' ')),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _formatCurrency(liability.calculatedRemainingAmount),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[700],
+                          ),
+                        ),
+                        if (liability.monthlyPayment != null)
+                          Text(
+                            '${_formatCurrency(liability.monthlyPayment!)}/mo',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getAssetIcon(String type) {
+    switch (type) {
+      case 'LAND':
+        return Icons.landscape;
+      case 'HOUSE':
+        return Icons.home;
+      case 'VEHICLE':
+        return Icons.directions_car;
+      case 'FIXED_DEPOSIT':
+        return Icons.lock;
+      case 'SAVINGS':
+        return Icons.savings;
+      case 'SHARES':
+        return Icons.show_chart;
+      case 'EPF':
+      case 'RETIREMENT_FUND':
+        return Icons.account_balance;
+      case 'GOLD':
+        return Icons.diamond;
+      default:
+        return Icons.account_balance_wallet;
+    }
   }
 
   Widget _buildAssumptionsCard() {

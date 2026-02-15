@@ -39,16 +39,14 @@ class _InvestmentEfficiencyScreenState
   String _fmt(double v) =>
       NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0).format(v);
 
+  // Use valueInLKR for consistent calculations (includes auto-growth and USD conversion)
   double get _totalAssets =>
-      _assets.fold(0, (s, a) => s + a.currentValue);
+      _assets.fold(0, (s, a) => s + a.valueInLKR);
 
+  // Use isInvestment flag for investment assets
   double get _investedAssets => _assets
-      .where((a) =>
-  a.type == 'SHARES' ||
-      a.type == 'RETIREMENT_FUND' ||
-      a.type == 'EPF' ||
-      a.type == 'GOLD')
-      .fold(0, (s, a) => s + a.currentValue);
+      .where((a) => a.isInvestment)
+      .fold(0, (s, a) => s + a.valueInLKR);
 
   double get _efficiency =>
       _totalAssets == 0 ? 0 : (_investedAssets / _totalAssets) * 100;
@@ -67,12 +65,9 @@ class _InvestmentEfficiencyScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Use isInvestment flag for filtering
     final investmentAssets = _assets
-        .where((a) =>
-            a.type == 'SHARES' ||
-            a.type == 'RETIREMENT_FUND' ||
-            a.type == 'EPF' ||
-            a.type == 'GOLD')
+        .where((a) => a.isInvestment)
         .toList();
 
     return Scaffold(
@@ -91,156 +86,163 @@ class _InvestmentEfficiencyScreenState
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                /// ===== HEADER =====
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0D47A1), Color(0xFF1976D2)],
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  /// ===== HEADER =====
+                  Container(
+                    width: double.infinity,
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF0D47A1), Color(0xFF1976D2)],
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Capital Efficiency',
-                        style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${_efficiency.toStringAsFixed(1)}%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withAlpha(25),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          _label,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Capital Efficiency',
                           style: TextStyle(
-                            color: _color,
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_efficiency.toStringAsFixed(1)}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                /// ===== SUMMARY =====
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      _metric('Total Assets', _fmt(_totalAssets),
-                          Icons.account_balance),
-                      _metric('Invested Capital', _fmt(_investedAssets),
-                          Icons.trending_up),
-                      _metric(
-                        'Idle Capital',
-                        _fmt(_totalAssets - _investedAssets),
-                        Icons.pause_circle,
-                      ),
-                    ],
-                  ),
-                ),
-
-                /// ===== INVESTMENT LIST =====
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Divider(),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Investment Assets',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withAlpha(25),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _label,
+                            style: TextStyle(
+                              color: _color,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withAlpha(25),
-                          borderRadius: BorderRadius.circular(12),
+                      ],
+                    ),
+                  ),
+
+                  /// ===== SUMMARY =====
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        _metric('Total Assets', _fmt(_totalAssets),
+                            Icons.account_balance, count: _assets.length),
+                        _metric('Invested Capital', _fmt(_investedAssets),
+                            Icons.trending_up, count: _assets.where((a) => a.isInvestment).length, highlight: true),
+                        _metric(
+                          'Idle Capital',
+                          _fmt(_totalAssets - _investedAssets),
+                          Icons.pause_circle,
+                          count: _assets.where((a) => !a.isInvestment).length,
                         ),
-                        child: Text(
-                          '${investmentAssets.length} items',
+                      ],
+                    ),
+                  ),
+
+                  /// ===== INVESTMENT LIST =====
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Investment Assets',
                           style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryBlue,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
                           ),
                         ),
-                      ),
-                    ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBlue.withAlpha(25),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${investmentAssets.length} items',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primaryBlue,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: investmentAssets.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.show_chart,
-                                  size: 64, color: Colors.grey.shade300),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No investments yet',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              ElevatedButton.icon(
-                                onPressed: () => _showAddDialog(),
-                                icon: const Icon(Icons.add),
-                                label: const Text('Add Investment'),
-                              ),
-                            ],
+                  // Investment assets list (no longer in Expanded)
+                  if (investmentAssets.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.show_chart,
+                              size: 64, color: Colors.grey.shade300),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No investments yet',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                          itemCount: investmentAssets.length,
-                          itemBuilder: (ctx, i) =>
-                              _buildInvestmentCard(investmentAssets[i]),
-                        ),
-                ),
-              ],
+                          const SizedBox(height: 8),
+                          ElevatedButton.icon(
+                            onPressed: () => _showAddDialog(),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add Investment'),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                      child: Column(
+                        children: investmentAssets
+                            .map((asset) => _buildInvestmentCard(asset))
+                            .toList(),
+                      ),
+                    ),
+                ],
+              ),
             ),
     );
   }
 
-  Widget _metric(String title, String value, IconData icon) {
+  Widget _metric(String title, String value, IconData icon, {int? count, bool highlight = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: highlight ? const Color(0xFF6A1B9A).withAlpha(10) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: highlight ? Border.all(color: const Color(0xFF6A1B9A).withAlpha(50), width: 2) : null,
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
@@ -251,19 +253,45 @@ class _InvestmentEfficiencyScreenState
       ),
       child: Row(
         children: [
-          Icon(icon, size: 28, color: AppTheme.primaryBlue),
+          Icon(icon, size: 28, color: highlight ? const Color(0xFF6A1B9A) : AppTheme.primaryBlue),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style:
-                      TextStyle(fontSize: 13, color: AppTheme.textMedium)),
-              const SizedBox(height: 4),
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(title,
+                        style:
+                            TextStyle(fontSize: 13, color: AppTheme.textMedium)),
+                    if (count != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: highlight ? const Color(0xFF6A1B9A).withAlpha(30) : AppTheme.primaryBlue.withAlpha(20),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$count items',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: highlight ? const Color(0xFF6A1B9A) : AppTheme.primaryBlue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(value,
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: highlight ? const Color(0xFF6A1B9A) : Colors.black)),
+              ],
+            ),
           ),
         ],
       ),
@@ -273,7 +301,8 @@ class _InvestmentEfficiencyScreenState
   Widget _buildInvestmentCard(Asset asset) {
     final growthRate = asset.yearlyGrowthRate ?? 0;
     final purchaseValue = asset.purchaseValue ?? asset.currentValue;
-    final gain = asset.currentValue - purchaseValue;
+    final currentVal = asset.calculatedCurrentValue;
+    final gain = currentVal - purchaseValue;
     final gainPercent =
         purchaseValue > 0 ? (gain / purchaseValue * 100) : 0;
 
@@ -414,7 +443,7 @@ class _InvestmentEfficiencyScreenState
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _fmt(asset.currentValue),
+                              _fmt(currentVal),
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
